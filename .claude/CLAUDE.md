@@ -71,8 +71,13 @@ Package dependency flow (no cycles): `cmd` → `index` → `stage` → `artifact
   `rclone`. The `--config` path is resolved by `resolveRcloneConfig` in
   `cmd/root.go`: explicit `rclone_config` key wins, else project's
   `.dud/rclone.conf` if present, else the flag is omitted so rclone uses its
-  own default resolution. `strategy.CheckoutStrategy` selects symlink
-  (default) vs copy on checkout.
+  own default resolution. The rclone remote path itself comes from
+  `resolveRemote` in `cmd/remote.go`: named remotes live in the `remotes`
+  config map, `remote` names the default (or, legacy, is a literal rclone
+  path), and push/fetch/pull accept a remote via `--remote` or as a first
+  positional arg that matches a configured name (`remoteFromArgs`; it needs
+  the pre-`prepare()` args because `prepare()` rewrites paths in place).
+  `strategy.CheckoutStrategy` selects symlink (default) vs copy on checkout.
 - **`src/checksum`** — BLAKE3 hashing with pooled buffers/hashers; this is the
   hot path for large datasets, so keep allocations out of it.
 - **`src/cmd`** — Cobra commands. `prepare()` in `root.go` is the common

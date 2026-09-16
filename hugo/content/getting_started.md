@@ -259,16 +259,23 @@ To tell Dud about our new "remote", we'll edit Dud's configuration file, `.dud/c
     # config to override.
     # cache: .dud/cache
 
-    # To enable push and fetch, set 'remote' to a valid rclone remote path. For
+    # To enable push and fetch, declare named remotes under 'remotes', each set to
+    # a valid rclone remote path, and set 'remote' to the name of the default. For
     # example, if you have a remote called "s3" in your .dud/rclone.conf, and you
     # want your remote cache to live in a bucket called 'dud', you would write:
     #
-    # remote: s3:dud
+    # remotes:
+    #   s3: s3:dud
+    # remote: s3
+    #
+    # Pick a non-default remote per invocation with 'dud push <name>' or
+    # 'dud fetch --remote <name>'. Setting 'remote' directly to an rclone remote
+    # path also works.
     #
     # For more info, see the rclone docs:
     # https://rclone.org/docs/#syntax-of-remote-paths
 
-Dud again gives us some pointers on configuring a remote cache: we need to set the `remote` value to a [path format described in the rclone documentation](https://rclone.org/docs/#syntax-of-remote-paths). We can accomplish this any number of ways, but we'll use the opportunity to explore more of Dud's CLI. `dud config` allows programmatic access to Dud's config file. Let's use it to set our `remote`:
+Dud again gives us some pointers on configuring a remote cache: we need to point Dud at a [path format described in the rclone documentation](https://rclone.org/docs/#syntax-of-remote-paths). Since we only need one remote for now, we'll take the shortcut mentioned in the comments and set `remote` directly to the rclone path (we'll come back to named remotes [below](#using-multiple-remotes)). We can accomplish this any number of ways, but we'll use the opportunity to explore more of Dud's CLI. `dud config` allows programmatic access to Dud's config file. Let's use it to set our `remote`:
 
     $ dud config set remote fake_remote:/tmp/dud/cache
 This command sets the `remote` key in the Dud config to the value `fake_remote:/tmp/dud/cache`. This value tells Dud and rclone that we're communicating with the remote named `fake_remote`, and the base directory of our remote cache will be `/tmp/dud/cache`. (As mentioned in the rclone documentation, including a leading forward slash in the remote path is not  recommended in most cases. It's required here because the remote is an absolute path on our local filesystem.)
@@ -324,6 +331,28 @@ Sure enough, rclone reports that `.dud/cache` and `/tmp/dud/cache` are identical
     2022/07/18 01:32:48 NOTICE: Local file system at /tmp/dud/cache: 10 matching files
 
 `dud fetch` is the inverse of `dud push`; it looks up artifacts the same way `push` does (from stage files), but it copies _from_ the remote cache _to_ the local cache.
+
+#### Using multiple remotes
+
+A project isn't limited to one remote cache. You might keep an S3 bucket for collaborators and a mirror on a local NAS, for instance. Declare each one under the `remotes` map and name the default with `remote`:
+
+```yaml
+# .dud/config.yaml
+remotes:
+  s3: s3:dud-cache
+  nas: nas:/srv/dud/cache
+remote: s3
+```
+
+`dud config set remotes.nas nas:/srv/dud/cache` adds or updates a single entry without touching the others. The `remotes` map can also live in your user-level config so the same names work across all your projects; project entries override user entries with the same name. Remote names are case-insensitive and may not contain dots.
+
+`dud push`, `dud fetch` and `dud pull` use the default remote unless told otherwise. To target another, either pass its name as the first argument or use the `--remote`/`-r` flag:
+
+    $ dud push nas                    # every stage, to 'nas'
+    $ dud push nas extract_cifar.yaml # one stage (and its upstream), to 'nas'
+    $ dud pull --remote nas
+
+The positional form only kicks in when the first argument is the name of a configured remote; otherwise it's treated as a stage file, exactly as before. Use the flag when a stage file happens to share a name with a remote. A name given via the flag that isn't declared under `remotes` is an error rather than being handed to rclone as a path.
 
 #### Using a globally-configured rclone remote
 

@@ -26,11 +26,18 @@ func init() {
 # config to override.
 # cache: .dud/cache
 
-# To enable push and fetch, set 'remote' to a valid rclone remote path. For
+# To enable push and fetch, declare named remotes under 'remotes', each set to
+# a valid rclone remote path, and set 'remote' to the name of the default. For
 # example, if you have a remote called "s3" in your .dud/rclone.conf, and you
 # want your remote cache to live in a bucket called 'dud', you would write:
 #
-# remote: s3:dud
+# remotes:
+#   s3: s3:dud
+# remote: s3
+#
+# Pick a non-default remote per invocation with 'dud push <name>' or
+# 'dud fetch --remote <name>'. Setting 'remote' directly to an rclone remote
+# path also works.
 #
 # For more info, see the rclone docs:
 # https://rclone.org/docs/#syntax-of-remote-paths
