@@ -69,6 +69,11 @@ type Cache interface {
 // A LocalCache is a Cache that uses a directory on a local filesystem.
 type LocalCache struct {
 	dir string
+	// RcloneConfig is the path passed to `rclone --config` when Push or Fetch
+	// shell out. An empty string omits the flag, letting rclone use its own
+	// resolution (RCLONE_CONFIG env var, then platform default). Set once
+	// before the first Push/Fetch call; not safe to mutate concurrently.
+	RcloneConfig string
 }
 
 // NewLocalCache initializes a LocalCache with a valid cache directory.

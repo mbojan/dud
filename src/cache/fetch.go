@@ -51,7 +51,7 @@ func (ch LocalCache) Fetch(
 	// currently expect remoteCopy not to be called if there's nothing to
 	// fetch.
 	if len(fetchFiles) > 0 {
-		if err := remoteCopy(remoteSrc, ch.dir, fetchFiles); err != nil {
+		if err := remoteCopy(ch.RcloneConfig, remoteSrc, ch.dir, fetchFiles); err != nil {
 			return errors.Wrap(err, "fetch")
 		}
 	}

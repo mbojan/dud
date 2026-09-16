@@ -65,7 +65,7 @@ func mkdirsThen(src, dst string, f func(src, dst string) error) error {
 
 // Mock remoteCopy with a version that creates hard links between directories
 // TODO: Consider asserting the number of calls to remoteCopy.
-func mockRemoteCopy(src, dst string, fileSet map[string]struct{}) error {
+func mockRemoteCopy(rcloneConfig, src, dst string, fileSet map[string]struct{}) error {
 	for file := range fileSet {
 		if err := mkdirsThen(
 			filepath.Join(src, file),
@@ -86,7 +86,7 @@ func TestFetchIntegration(t *testing.T) {
 	logger := agglog.NewNullLogger()
 
 	remoteCopyOrig := remoteCopy
-	remoteCopyPanic := func(src, dst string, fileSet map[string]struct{}) error {
+	remoteCopyPanic := func(rcloneConfig, src, dst string, fileSet map[string]struct{}) error {
 		panic("unexpected call to remoteCopy")
 	}
 	remoteCopy = remoteCopyPanic

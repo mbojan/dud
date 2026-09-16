@@ -68,8 +68,11 @@ Package dependency flow (no cycles): `cmd` → `index` → `stage` → `artifact
   Directory artifacts are committed as a JSON *directory manifest* stored in
   the cache like any other object, with recursive concurrent workers
   (`maxSharedWorkers`/`maxDedicatedWorkers`). `Fetch`/`Push` shell out to
-  `rclone` using `.dud/rclone.conf`. `strategy.CheckoutStrategy` selects
-  symlink (default) vs copy on checkout.
+  `rclone`. The `--config` path is resolved by `resolveRcloneConfig` in
+  `cmd/root.go`: explicit `rclone_config` key wins, else project's
+  `.dud/rclone.conf` if present, else the flag is omitted so rclone uses its
+  own default resolution. `strategy.CheckoutStrategy` selects symlink
+  (default) vs copy on checkout.
 - **`src/checksum`** — BLAKE3 hashing with pooled buffers/hashers; this is the
   hot path for large datasets, so keep allocations out of it.
 - **`src/cmd`** — Cobra commands. `prepare()` in `root.go` is the common
@@ -81,7 +84,8 @@ Package dependency flow (no cycles): `cmd` → `index` → `stage` → `artifact
   package-level `agglog.AggLogger` (`Error`/`Info`/`Debug`).
 
 Project layout on disk: `.dud/index`, `.dud/lock`, `.dud/config.yaml`,
-`.dud/rclone.conf`, and the cache at `.dud/cache` (configurable via `cache`
+`.dud/rclone.conf` (project-local rclone config, optional if `rclone_config`
+points elsewhere), and the cache at `.dud/cache` (configurable via `cache`
 key).
 
 ## Testing conventions

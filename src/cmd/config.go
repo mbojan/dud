@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	validFields      = []string{"cache", "remote"}
+	validFields      = []string{"cache", "remote", "rclone_config"}
 	targetUserConfig bool
 )
 

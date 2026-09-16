@@ -22,7 +22,7 @@ func TestPushIntegration(t *testing.T) {
 	logger := agglog.NewNullLogger()
 
 	remoteCopyOrig := remoteCopy
-	remoteCopyPanic := func(src, dst string, fileSet map[string]struct{}) error {
+	remoteCopyPanic := func(rcloneConfig, src, dst string, fileSet map[string]struct{}) error {
 		panic("unexpected call to remoteCopy")
 	}
 	remoteCopy = remoteCopyPanic

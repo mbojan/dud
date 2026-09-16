@@ -216,6 +216,40 @@ func readConfig(rootDir string) (err error) {
 	return
 }
 
+// resolveRcloneConfig returns the absolute path passed to `rclone --config`.
+// An empty return value means: omit --config and let rclone use its own
+// resolution (RCLONE_CONFIG env var, then platform default).
+//
+// Resolution order:
+//  1. If `rclone_config` is explicitly set in viper (user or project config),
+//     use it. Setting it to "" opts out of the project-file fallback.
+//  2. Else, if `.dud/rclone.conf` exists in the project, use it (backward
+//     compat with pre-existing projects).
+//  3. Else, return "" and let rclone resolve.
+func resolveRcloneConfig(rootDir string) (string, error) {
+	if viper.IsSet("rclone_config") {
+		raw := viper.GetString("rclone_config")
+		if raw == "" {
+			return "", nil
+		}
+		expanded, err := homedir.Expand(raw)
+		if err != nil {
+			return "", err
+		}
+		return filepath.Abs(expanded)
+	}
+
+	projectConf := filepath.Join(rootDir, ".dud", "rclone.conf")
+	exists, err := fsutil.Exists(projectConf, false)
+	if err != nil {
+		return "", err
+	}
+	if exists {
+		return filepath.Abs(projectConf)
+	}
+	return "", nil
+}
+
 func getProjectRootDir() (string, error) {
 	dirname, err := os.Getwd()
 	if err != nil {
@@ -320,6 +354,11 @@ func prepare(paths []string) (rootDir string, ch cache.LocalCache, idx index.Ind
 	}
 
 	ch, err = cache.NewLocalCache(viper.GetString("cache"))
+	if err != nil {
+		return
+	}
+
+	ch.RcloneConfig, err = resolveRcloneConfig(rootDir)
 	if err != nil {
 		return
 	}

@@ -325,6 +325,19 @@ Sure enough, rclone reports that `.dud/cache` and `/tmp/dud/cache` are identical
 
 `dud fetch` is the inverse of `dud push`; it looks up artifacts the same way `push` does (from stage files), but it copies _from_ the remote cache _to_ the local cache.
 
+#### Using a globally-configured rclone remote
+
+The walkthrough above stores the rclone configuration inside the project at `.dud/rclone.conf`. That's convenient for the demo, but for real remotes it often isn't what you want -- rclone configs typically hold tokens and credentials that shouldn't be committed to a repository, and duplicating them per-project is tedious.
+
+Dud can instead point rclone at any config path via the `rclone_config` key. Set it in the project config (`.dud/config.yaml`) or, more commonly, in the user-level config at `$XDG_CONFIG_HOME/dud/config.yaml` so every project on your machine picks it up:
+
+```yaml
+# ~/.config/dud/config.yaml
+rclone_config: ~/.config/rclone/rclone.conf
+```
+
+With `rclone_config` set, any remote name you set as `remote:` is resolved against that shared config -- so you can `rclone config` once, keep credentials outside every project, and reuse the same remotes across all your Dud projects. Setting `rclone_config: ""` explicitly lets rclone use its own default resolution (`RCLONE_CONFIG` env var, then the platform default). If `rclone_config` is unset and `.dud/rclone.conf` exists, Dud uses the project-local file for backward compatibility.
+
 ### Versioning our code with Git
 
 We've now stored our data in a shared location and we know how to get it back. Next, we need to do the same with our code. Sharing the code -- our stage files and configuration -- is critical; without them, our collaborators (and ourselves!) won't be able to make sense of the data. Furthermore, we want to version our stage files so we can trace the changes in our pipeline over time. Lucky for us, the practice of versioning and sharing source code is a pillar of the digital world, and there are many source control management (SCM) tools at our disposal that are designed for our situation.

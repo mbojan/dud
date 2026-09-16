@@ -31,7 +31,7 @@ func (ch LocalCache) Push(remoteDst string, arts map[string]*artifact.Artifact) 
 	}
 	progress.Finish()
 	if len(pushFiles) > 0 {
-		return errors.Wrap(remoteCopy(ch.dir, remoteDst, pushFiles), "push")
+		return errors.Wrap(remoteCopy(ch.RcloneConfig, ch.dir, remoteDst, pushFiles), "push")
 	}
 	return nil
 }
@@ -71,11 +71,13 @@ func gatherFilesToPush(
 	return nil
 }
 
-var remoteCopy = func(src, dst string, fileSet map[string]struct{}) error {
-	cmd := exec.Command(
-		"rclone",
-		"--config",
-		".dud/rclone.conf",
+var remoteCopy = func(rcloneConfig, src, dst string, fileSet map[string]struct{}) error {
+	args := make([]string, 0, 10)
+	if rcloneConfig != "" {
+		args = append(args, "--config", rcloneConfig)
+	}
+	args = append(
+		args,
 		// Ideally these sorts of flags could be added to the rclone config,
 		// but I haven't found a way to add them.
 		// See: https://github.com/rclone/rclone/issues/2697
@@ -91,6 +93,7 @@ var remoteCopy = func(src, dst string, fileSet map[string]struct{}) error {
 		src,
 		dst,
 	)
+	cmd := exec.Command("rclone", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	stdin, err := cmd.StdinPipe()
