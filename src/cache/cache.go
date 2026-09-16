@@ -96,8 +96,8 @@ func (ch LocalCache) PathForChecksum(checksum string) (string, error) {
 }
 
 type directoryManifest struct {
-	Path     string                        `json:"path,"`
-	Contents map[string]*artifact.Artifact `json:"contents,"`
+	Path     string                        `json:"path"`
+	Contents map[string]*artifact.Artifact `json:"contents"`
 }
 
 func readDirManifest(path string) (man directoryManifest, err error) {
