@@ -1,0 +1,13 @@
+Added copy.yaml to the index.
+nothing to do for stage data.txt.yaml (up-to-date)
+running stage copy.yaml (definition modified)
+
+skipping import stage data.txt.yaml (imports are read-only)
+committing stage copy.yaml
+
+copy.yaml   stage definition up-to-date
+  copy.txt  up-to-date (link)
+
+data.txt.yaml  stage definition up-to-date
+  data.txt     up-to-date (link)
+

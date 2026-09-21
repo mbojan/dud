@@ -1,0 +1,33 @@
+.
+[drwxr-xr-x user          4096]  ./.dud
+[-rw-r--r-- user            14]  ./.dud/.gitignore
+[drwxr-xr-x user          4096]  ./.dud/cache
+[drwxr-xr-x user          4096]  ./.dud/cache/2e
+[-r--r--r-- user            17]  ./.dud/cache/2e/57d3e34778efbcefa4193c846f78a14813ec612e33710bacd05748f62b2802
+[drwxr-xr-x user          4096]  ./.dud/cache/2f
+[-r--r--r-- user            14]  ./.dud/cache/2f/577dcf681ca125ecf1b79157454f1ac65b58fec1eed70318a722bf10677639
+[drwxr-xr-x user          4096]  ./.dud/cache/9d
+[-r--r--r-- user             2]  ./.dud/cache/9d/902f9864f3043dca97e40698eee07a2fe6771591c687ed129cde8f6fcc4a79
+[drwxr-xr-x user          4096]  ./.dud/cache/15
+[-r--r--r-- user           234]  ./.dud/cache/15/4860a4ec30a7feef7ed27896196fa24bc96b0b038007680160c39be2d7107f
+[drwxr-xr-x user          4096]  ./.dud/cache/48
+[-r--r--r-- user             6]  ./.dud/cache/48/ddec11a997ecf83295ae584ec91477145c31bb3e0953a3095d640b1b1a45a9
+[drwxr-xr-x user          4096]  ./.dud/cache/66
+[-r--r--r-- user           234]  ./.dud/cache/66/7f79d6e6e3f0769e4dfe23190787fb3e493c51cbc92927aaebf1b1df81cd1d
+[drwxr-xr-x user          4096]  ./.dud/cache/81
+[-r--r--r-- user             2]  ./.dud/cache/81/c4b7f7e0549f1514e9cae97cf40cf133920418d3dc71bedbf60ec9bd6148cb
+[drwxr-xr-x user          4096]  ./.dud/cache/ff
+[-r--r--r-- user             3]  ./.dud/cache/ff/3e86a123552d66c31eb3308916d76bf9d918b1f635aa39d00d3a3428bda536
+[-rw-r--r-- user           892]  ./.dud/config.yaml
+[-rw-r--r-- user            48]  ./.dud/index
+[-rw-r--r-- user           240]  ./.dud/rclone.conf
+[lrwxrwxrwx user            76]  ./copy.txt -> .dud/cache/2e/57d3e34778efbcefa4193c846f78a14813ec612e33710bacd05748f62b2802
+[-rw-r--r-- user           319]  ./copy.yaml
+[lrwxrwxrwx user            76]  ./data.txt -> .dud/cache/2e/57d3e34778efbcefa4193c846f78a14813ec612e33710bacd05748f62b2802
+[-rw-r--r-- user           361]  ./data.txt.yaml
+[drwxr-xr-x user          4096]  ./dir
+[lrwxrwxrwx user            79]  ./dir/a.txt -> ../.dud/cache/ff/3e86a123552d66c31eb3308916d76bf9d918b1f635aa39d00d3a3428bda536
+[lrwxrwxrwx user            79]  ./dir/b.txt -> ../.dud/cache/9d/902f9864f3043dca97e40698eee07a2fe6771591c687ed129cde8f6fcc4a79
+[-rw-r--r-- user           358]  ./dir.yaml
+[lrwxrwxrwx user            76]  ./model.bin -> .dud/cache/48/ddec11a997ecf83295ae584ec91477145c31bb3e0953a3095d640b1b1a45a9
+[-rw-r--r-- user           363]  ./model.bin.yaml

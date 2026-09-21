@@ -1,0 +1,2 @@
+stage data.txt.yaml is up to date
+stage dir.yaml is up to date

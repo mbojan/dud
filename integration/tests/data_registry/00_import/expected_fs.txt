@@ -1,0 +1,21 @@
+.
+[drwxr-xr-x user          4096]  ./.dud
+[-rw-r--r-- user            14]  ./.dud/.gitignore
+[drwxr-xr-x user          4096]  ./.dud/cache
+[drwxr-xr-x user          4096]  ./.dud/cache/2f
+[-r--r--r-- user            14]  ./.dud/cache/2f/577dcf681ca125ecf1b79157454f1ac65b58fec1eed70318a722bf10677639
+[drwxr-xr-x user          4096]  ./.dud/cache/9d
+[-r--r--r-- user             2]  ./.dud/cache/9d/902f9864f3043dca97e40698eee07a2fe6771591c687ed129cde8f6fcc4a79
+[drwxr-xr-x user          4096]  ./.dud/cache/66
+[-r--r--r-- user           234]  ./.dud/cache/66/7f79d6e6e3f0769e4dfe23190787fb3e493c51cbc92927aaebf1b1df81cd1d
+[drwxr-xr-x user          4096]  ./.dud/cache/81
+[-r--r--r-- user             2]  ./.dud/cache/81/c4b7f7e0549f1514e9cae97cf40cf133920418d3dc71bedbf60ec9bd6148cb
+[-rw-r--r-- user           892]  ./.dud/config.yaml
+[-rw-r--r-- user            23]  ./.dud/index
+[-rw-r--r-- user           240]  ./.dud/rclone.conf
+[lrwxrwxrwx user            76]  ./data.txt -> .dud/cache/2f/577dcf681ca125ecf1b79157454f1ac65b58fec1eed70318a722bf10677639
+[-rw-r--r-- user           361]  ./data.txt.yaml
+[drwxr-xr-x user          4096]  ./dir
+[lrwxrwxrwx user            79]  ./dir/a.txt -> ../.dud/cache/81/c4b7f7e0549f1514e9cae97cf40cf133920418d3dc71bedbf60ec9bd6148cb
+[lrwxrwxrwx user            79]  ./dir/b.txt -> ../.dud/cache/9d/902f9864f3043dca97e40698eee07a2fe6771591c687ed129cde8f6fcc4a79
+[-rw-r--r-- user           358]  ./dir.yaml

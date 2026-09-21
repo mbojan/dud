@@ -283,7 +283,7 @@ func TestResolveRealGit(t *testing.T) {
 		require.NoError(t, os.MkdirAll(filepath.Dir(full), 0o755))
 		require.NoError(t, os.WriteFile(full, []byte(content), 0o644))
 	}
-	git("init", "-q", "-b", "main")
+	git("init", "-q")
 	git("config", "user.email", "test@example.com")
 	git("config", "user.name", "test")
 	write(".dud/index", "data.txt.yaml\n")
