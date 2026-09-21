@@ -279,7 +279,7 @@ func FindDirArtifactOwnerForPath(
 	parts := strings.Split(fullDir, string(filepath.Separator))
 	dir := ""
 	for _, part := range parts {
-		dir := filepath.Join(dir, part)
+		dir = filepath.Join(dir, part)
 		owner, ok := artifacts[dir]
 		// If we find a matching Artifact for any ancestor directory, the Artifact
 		// in question is only the owner if it is recursive, or if we've

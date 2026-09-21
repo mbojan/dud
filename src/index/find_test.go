@@ -128,3 +128,27 @@ func TestFindOwner(t *testing.T) {
 		}
 	})
 }
+
+func TestFindOwnerNestedDirArtifact(t *testing.T) {
+	// The owning directory artifact lives more than one level deep, so the
+	// lineage walk must accumulate path components rather than restart at
+	// each one.
+	targetArt := artifact.Artifact{Path: "data/raw", IsDir: true}
+	idx := Index{
+		"raw.yaml": &stage.Stage{
+			Outputs: map[string]*artifact.Artifact{
+				"data/raw": &targetArt,
+			},
+		},
+	}
+
+	owner, foundArt := idx.findOwner("data/raw/x.txt")
+
+	if owner != "raw.yaml" {
+		t.Fatalf("got owner = %#v, want raw.yaml", owner)
+	}
+
+	if diff := cmp.Diff(&targetArt, foundArt); diff != "" {
+		t.Fatalf("artifact -want +got:\n%s", diff)
+	}
+}
