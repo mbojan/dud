@@ -1,5 +1,12 @@
 # Dud
 
+> This is a fork of <https://github.com/kevin-hanselman/dud>. I have had it
+> added the following experimental features:
+>
+> 1. Multiple named remotes
+> 2. Data registries - Git repos storing only stage files and remote
+>    specifications from which other projects can `dud import` artifacts.
+
 [![Build status](https://github.com/kevin-hanselman/dud/workflows/build/badge.svg)](https://github.com/kevin-hanselman/dud/actions?query=workflow%3Abuild)
 [![Go report card](https://goreportcard.com/badge/github.com/kevin-hanselman/dud)](https://goreportcard.com/report/github.com/kevin-hanselman/dud)
 
