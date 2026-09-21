@@ -562,8 +562,8 @@ func TestRun(t *testing.T) {
 		stg := stage.Stage{
 			Command: "echo 'generating bosh.bin'",
 			Inputs: map[string]*artifact.Artifact{
-				"bish.bin": &(bish.Artifact),
-				"bash.bin": &(bash.Artifact),
+				"bish.bin": &bish.Artifact,
+				"bash.bin": &bash.Artifact,
 			},
 			Outputs: map[string]*artifact.Artifact{
 				"bosh.bin": {Path: "bosh.bin"},

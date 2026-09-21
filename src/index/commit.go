@@ -35,6 +35,16 @@ func (idx Index) Commit(
 		return unknownStageError{stagePath}
 	}
 
+	// An import's output checksum is whatever the registry recorded; committing
+	// would overwrite it with the workspace contents and silently fork the
+	// artifact. Downstream stages still read the checksum from the output.
+	if stg.IsImport() {
+		logger.Info.Printf("skipping import stage %s (imports are read-only)\n", stagePath)
+		committed[stagePath] = true
+		delete(inProgress, stagePath)
+		return nil
+	}
+
 	nonStageInputs := []*artifact.Artifact{}
 
 	for artPath, art := range stg.Inputs {

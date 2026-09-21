@@ -31,6 +31,15 @@ func (idx Index) Push(
 		return unknownStageError{stagePath}
 	}
 
+	// Imports are read-only copies of registry artifacts; the registry is
+	// responsible for hosting them.
+	if stg.IsImport() {
+		logger.Info.Printf("skipping import stage %s (imports are read-only)\n", stagePath)
+		pushed[stagePath] = true
+		delete(inProgress, stagePath)
+		return nil
+	}
+
 	for artPath := range stg.Inputs {
 		ownerPath, _ := idx.findOwner(artPath)
 		if ownerPath == "" {

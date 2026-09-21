@@ -24,6 +24,15 @@ func (e unknownStageError) Error() string {
 	return fmt.Sprintf("unknown stage %#v", e.stagePath)
 }
 
+// NoRemoteError is returned when an operation needs a remote cache but none
+// is configured. Import stages carry their own remote, so a project made only
+// of imports can be fetched without one.
+type NoRemoteError struct{}
+
+func (e NoRemoteError) Error() string {
+	return "no remote specified in the config"
+}
+
 // AddStage adds the given Stage to the Index, with the given path as the key.
 func (idx *Index) AddStage(stg stage.Stage, path string) error {
 	if _, ok := (*idx)[path]; ok {

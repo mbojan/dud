@@ -2,10 +2,11 @@ package index
 
 import (
 	"bytes"
+	"fmt"
 	"text/template"
 
 	"github.com/awalterschulze/gographviz"
-
+	"github.com/kevin-hanselman/dud/src/stage"
 	"github.com/pkg/errors"
 )
 
@@ -14,6 +15,19 @@ var hiddenAttr = map[string]string{"style": "invis", "shape": "point"}
 type stageNode struct {
 	Path    string
 	Command string
+}
+
+// graphLabel describes what the stage does, for the graph's stage box: its
+// command, or for imports, where the artifact comes from.
+func graphLabel(stg *stage.Stage) string {
+	if !stg.IsImport() {
+		return stg.Command
+	}
+	label := fmt.Sprintf("import %s %s", stg.Import.Repo, stg.Import.Path)
+	if stg.Import.Rev != "" {
+		label += " @" + stg.Import.Rev
+	}
+	return label
 }
 
 var stageTemplate string = `<
@@ -118,7 +132,7 @@ func (idx Index) Graph(
 		if err != nil {
 			return err
 		}
-		if err := tmpl.Execute(&buf, stageNode{Path: stagePath, Command: stg.Command}); err != nil {
+		if err := tmpl.Execute(&buf, stageNode{Path: stagePath, Command: graphLabel(stg)}); err != nil {
 			return errors.Wrapf(err, "graph %s", stagePath)
 		}
 		if err := graph.AddSubGraph(

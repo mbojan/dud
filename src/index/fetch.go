@@ -1,6 +1,8 @@
 package index
 
 import (
+	"fmt"
+
 	"github.com/kevin-hanselman/dud/src/agglog"
 	"github.com/kevin-hanselman/dud/src/cache"
 	"github.com/pkg/errors"
@@ -49,6 +51,20 @@ func (idx Index) Fetch(
 				return err
 			}
 		}
+	}
+	// Import stages are fetched from the registry's remote, not the
+	// project's, so a project of nothing but imports needs no remote at all.
+	if stg.IsImport() {
+		remote = stg.Import.Remote
+		if remote == "" {
+			return fmt.Errorf(
+				"import stage %s has no remote; run 'dud update %s'",
+				stagePath,
+				stagePath,
+			)
+		}
+	} else if remote == "" {
+		return NoRemoteError{}
 	}
 	logger.Info.Printf("fetching stage %s\n", stagePath)
 	// Call Fetch on all Outputs at once to minimize the number of rclone calls.

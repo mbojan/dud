@@ -32,12 +32,39 @@ type Stage struct {
 	// directory. WorkingDir only affects the Stage's command; all inputs and
 	// outputs of the Stage should have paths relative to the project root.
 	WorkingDir string `yaml:"working-dir,omitempty"`
+	// Import, when set, marks the Stage as an import of an Artifact from a
+	// data registry (another Dud project under git). An import Stage has no
+	// Command and no Inputs, and its single Output carries the checksum
+	// recorded in the registry.
+	Import *ImportSpec `yaml:"import,omitempty" json:"import,omitempty"`
 	// Inputs is a set of Artifacts which the Stage's Command needs to
 	// operate. The Artifacts are keyed by their Path for faster lookup.
 	Inputs map[string]*artifact.Artifact `yaml:",omitempty"`
 	// Outputs is a set of Artifacts which are owned by the Stage. The
 	// Artifacts are keyed by their Path for faster lookup.
 	Outputs map[string]*artifact.Artifact
+}
+
+// An ImportSpec records where an import Stage's Artifact comes from.
+type ImportSpec struct {
+	// Repo is the git URL or local path of the registry.
+	Repo string `yaml:"repo" json:"repo"`
+	// Rev is the git revision (tag, branch, commit) to track. Empty means
+	// the default branch.
+	Rev string `yaml:"rev,omitempty" json:"rev,omitempty"`
+	// RevLock is the commit SHA that Rev resolved to when the Stage was last
+	// imported or updated.
+	RevLock string `yaml:"rev-lock,omitempty" json:"rev-lock,omitempty"`
+	// Path is the Artifact's path inside the registry.
+	Path string `yaml:"path" json:"path"`
+	// Remote is the registry's rclone remote path at RevLock, i.e. where the
+	// Artifact is fetched from.
+	Remote string `yaml:"remote,omitempty" json:"remote,omitempty"`
+}
+
+// IsImport returns true if the Stage imports its Artifact from a registry.
+func (stg Stage) IsImport() bool {
+	return stg.Import != nil
 }
 
 // Status holds everything necessary to qualify the state of a Stage.
@@ -61,6 +88,11 @@ func (stg Stage) toFileFormat() (out Stage) {
 	out.Checksum = stg.Checksum
 	out.Command = stg.Command
 	out.WorkingDir = stg.WorkingDir
+	if stg.Import != nil {
+		// Copy so that serializing never aliases the caller's spec.
+		spec := *stg.Import
+		out.Import = &spec
+	}
 
 	if len(stg.Inputs) > 0 {
 		out.Inputs = make(map[string]*artifact.Artifact, len(stg.Inputs))
@@ -93,13 +125,13 @@ var fromYamlFile = func(path string, stg *Stage) error {
 		return err
 	}
 	defer file.Close()
-	decoder := yaml.NewDecoder(file)
+	return errors.Wrap(decodeStrict(file, stg), path)
+}
+
+func decodeStrict(reader io.Reader, stg *Stage) error {
+	decoder := yaml.NewDecoder(reader)
 	decoder.SetStrict(true)
-	err = decoder.Decode(stg)
-	if err != nil {
-		return errors.Wrap(err, path)
-	}
-	return nil
+	return decoder.Decode(stg)
 }
 
 // FromFile loads a Stage from a file.
@@ -108,6 +140,23 @@ func FromFile(stagePath string) (stg Stage, err error) {
 	if err = fromYamlFile(stagePath, &tempStage); err != nil {
 		return
 	}
+	return fromFileFormat(tempStage, stagePath)
+}
+
+// FromReader loads a Stage from YAML read from the given reader. stagePath
+// is the path the Stage is (or will be) stored at; it is only used for
+// validation and error messages.
+func FromReader(reader io.Reader, stagePath string) (stg Stage, err error) {
+	var tempStage Stage
+	if err = decodeStrict(reader, &tempStage); err != nil {
+		return stg, errors.Wrap(err, stagePath)
+	}
+	return fromFileFormat(tempStage, stagePath)
+}
+
+// fromFileFormat normalizes a Stage as decoded from YAML (see toFileFormat)
+// and validates it.
+func fromFileFormat(tempStage Stage, stagePath string) (stg Stage, err error) {
 	stg.Checksum = tempStage.Checksum
 	stg.Command = strings.TrimSpace(tempStage.Command)
 	stg.Inputs = make(map[string]*artifact.Artifact, len(stg.Inputs))
@@ -115,6 +164,12 @@ func FromFile(stagePath string) (stg Stage, err error) {
 
 	// Clean all user-editable paths.
 	stg.WorkingDir = filepath.Clean(tempStage.WorkingDir)
+
+	if tempStage.Import != nil {
+		spec := *tempStage.Import
+		spec.Path = filepath.Clean(spec.Path)
+		stg.Import = &spec
+	}
 
 	for path, art := range tempStage.Inputs {
 		// yaml.v2 (and currently v3 as well) deserializes "  path.txt:" as
@@ -161,6 +216,11 @@ func (stg Stage) Validate(stagePath string) error {
 	if len(stg.Outputs)+len(stg.Command) == 0 {
 		return errors.New("declared no outputs and no command")
 	}
+	if stg.Import != nil {
+		if err := stg.validateImport(); err != nil {
+			return err
+		}
+	}
 
 	// First, check for direct overlap between Outputs and Inputs.
 	// Consolidate all Artifacts into a single map to facilitate the next step.
@@ -206,6 +266,34 @@ func (stg Stage) Validate(stagePath string) error {
 	return nil
 }
 
+// validateImport checks the constraints specific to import Stages: they are
+// frozen copies of a single registry Artifact, so a command or inputs would
+// have nothing to act on.
+func (stg Stage) validateImport() error {
+	if stg.Command != "" {
+		return errors.New("import stage cannot have a command")
+	}
+	if len(stg.Inputs) > 0 {
+		return errors.New("import stage cannot have inputs")
+	}
+	if len(stg.Outputs) != 1 {
+		return errors.New("import stage must have exactly one output")
+	}
+	if stg.Import.Repo == "" {
+		return errors.New("import stage has no repo")
+	}
+	if stg.Import.Path == "" || stg.Import.Path == "." {
+		return errors.New("import stage has no path")
+	}
+	if strings.Contains(stg.Import.Path, "..") {
+		return fmt.Errorf("import path %s is outside of the registry root", stg.Import.Path)
+	}
+	if filepath.IsAbs(stg.Import.Path) {
+		return fmt.Errorf("import path %s is an absolute path", stg.Import.Path)
+	}
+	return nil
+}
+
 // Serialize writes a Stage to the given writer.
 func (stg *Stage) Serialize(writer io.Writer) error {
 	return yaml.NewEncoder(writer).Encode(stg.toFileFormat())
@@ -233,6 +321,10 @@ func (stg Stage) CalculateChecksum() (string, error) {
 	cleanStage := Stage{
 		Command:    stg.Command,
 		WorkingDir: stg.WorkingDir,
+		// Every import field is part of the definition, including the
+		// registry-written ones: a moved rev-lock or remote must show up as
+		// "definition modified", exactly like a hand-edited rev.
+		Import: stg.Import,
 	}
 	cleanStage.Inputs = make(map[string]*artifact.Artifact, len(stg.Inputs))
 	for _, art := range stg.Inputs {
