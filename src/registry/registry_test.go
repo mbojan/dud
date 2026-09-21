@@ -319,4 +319,14 @@ func TestResolveRealGit(t *testing.T) {
 
 	_, err = reg.Resolve(dir, "v9", "data.txt")
 	require.ErrorContains(t, err, "fetch revision v9")
+
+	// A relative local path is resolved against the current directory, not
+	// the scratch repository.
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.Chdir(filepath.Dir(dir)))
+	defer os.Chdir(cwd)
+	got, err = reg.Resolve(filepath.Base(dir), "v1", "data.txt")
+	require.NoError(t, err)
+	require.Equal(t, v1, got.RevLock)
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kevin-hanselman/dud/src/index"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,7 +25,7 @@ func TestResolveRemote(t *testing.T) {
 		resetRemoteConfig(t)
 
 		_, err := resolveRemote("")
-		assert.True(t, errors.Is(err, noRemoteError{}))
+		assert.True(t, errors.Is(err, index.NoRemoteError{}))
 	})
 
 	t.Run("legacy literal remote is returned verbatim", func(t *testing.T) {

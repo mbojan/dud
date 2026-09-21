@@ -73,6 +73,39 @@ outputs:
     # for declaring Stage outputs which can be safely stored in source control
     # rather than Dud. This option is implicit for Artifacts in 'inputs'.
     skip-cache: true
+` + "```" + `
+
+A Stage may instead import a single Artifact from a data registry (see
+'dud import'). Import Stages have no 'command' and no 'inputs', and exactly
+one output. Below is an annotated import Stage YAML file.
+
+` + "``` yaml" + `
+checksum: abcdefghijklmnopqrstuvwxyz1234567890
+
+import:
+  # The git URL or local path of the registry, a Dud project tracked with git.
+  repo: git@github.com:org/data-registry.git
+
+  # The git revision (tag, branch or commit) to track. An empty or omitted
+  # value means the registry's default branch. Edit this and run 'dud update'
+  # to move to another revision.
+  rev: v2
+
+  # The commit that 'rev' resolved to, written by 'dud import' and 'dud update'.
+  rev-lock: 6c73875a5f5b522f90b5afa9ab12585f64327ca7
+
+  # The Artifact's path inside the registry.
+  path: data/raw.csv
+
+  # The registry's rclone remote path, written by 'dud import' and
+  # 'dud update'. 'dud fetch' downloads the Artifact from here.
+  remote: s3:registry-bucket
+
+# The single output holds the Artifact's checksum as recorded in the registry.
+# 'dud commit' and 'dud push' leave import Stages alone.
+outputs:
+  raw.csv:
+    checksum: abcdefghijklmnopqrstuvwxyz1234567890
 ` + "```",
 }
 

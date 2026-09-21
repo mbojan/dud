@@ -94,26 +94,28 @@ func (stg Stage) toFileFormat() (out Stage) {
 		out.Import = &spec
 	}
 
+	// Artifacts are copied so that writing a Stage never mutates the
+	// in-memory one, which may still be used (e.g. checked out) afterwards.
 	if len(stg.Inputs) > 0 {
 		out.Inputs = make(map[string]*artifact.Artifact, len(stg.Inputs))
 		for _, art := range stg.Inputs {
+			fileArt := *art
 			// SkipCache is implicitly true for all inputs. It's
 			// redundant and noisy to write it to the Stage file, so we hide
 			// it (making use of the 'omitempty' YAML directive) and set
 			// SkipCache to true when loading the file (see FromFile).
-			art.SkipCache = false
-			path := art.Path
-			art.Path = ""
-			out.Inputs[path] = art
+			fileArt.SkipCache = false
+			fileArt.Path = ""
+			out.Inputs[art.Path] = &fileArt
 		}
 	}
 
 	if len(stg.Outputs) > 0 {
 		out.Outputs = make(map[string]*artifact.Artifact, len(stg.Outputs))
 		for _, art := range stg.Outputs {
-			path := art.Path
-			art.Path = ""
-			out.Outputs[path] = art
+			fileArt := *art
+			fileArt.Path = ""
+			out.Outputs[art.Path] = &fileArt
 		}
 	}
 	return

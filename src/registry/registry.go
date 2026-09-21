@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -166,6 +167,15 @@ func (reg *Registry) resolveRev(repo, rev string) (string, error) {
 	if ref == "" {
 		ref = "HEAD"
 	}
+	// git runs inside the scratch repository, so a local registry path
+	// (relative to the current directory) has to be made absolute.
+	target := repo
+	if IsLocalPath(repo) {
+		var err error
+		if target, err = filepath.Abs(repo); err != nil {
+			return "", err
+		}
+	}
 	reg.logger.Debug.Printf("fetching %s from %s\n", ref, repo)
 	// Protocol v2 lets a full commit SHA be fetched directly on hosts that
 	// allow it (e.g. GitHub); a shallow fetch keeps the cost to one commit.
@@ -173,7 +183,7 @@ func (reg *Registry) resolveRev(repo, rev string) (string, error) {
 		reg.tmpDir,
 		"-c", "protocol.version=2",
 		"fetch", "-q", "--depth", "1",
-		repo, ref,
+		target, ref,
 	); err != nil {
 		return "", errors.Wrapf(
 			err,

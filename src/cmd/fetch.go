@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"github.com/kevin-hanselman/dud/src/index"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -56,7 +58,9 @@ func runFetch(args []string) []string {
 	}
 
 	remote, stagePaths, err := remoteFromArgs(rawArgs, args)
-	if err != nil {
+	// Import stages carry their own remote, so a missing project remote is
+	// only an error once a regular stage is reached (index.Fetch reports it).
+	if err != nil && !errors.Is(err, index.NoRemoteError{}) {
 		fatal(err)
 	}
 

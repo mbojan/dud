@@ -51,12 +51,9 @@ func TestImportRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// toFileFormat blanks artifact paths on the shared pointers, so compare
-	// against a fresh copy rather than stg.
-	want := newImportStage()
-	want.Checksum = checksum
-	want.Inputs = map[string]*artifact.Artifact{}
-	if diff := cmp.Diff(want, got); diff != "" {
+	// FromReader always allocates the Inputs map.
+	stg.Inputs = map[string]*artifact.Artifact{}
+	if diff := cmp.Diff(stg, got); diff != "" {
 		t.Fatalf("Stage -want +got:\n%s", diff)
 	}
 }

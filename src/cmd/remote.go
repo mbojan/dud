@@ -4,18 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kevin-hanselman/dud/src/index"
 	"github.com/spf13/viper"
 )
 
 // remoteName is the value of the --remote/-r flag shared by push, fetch and
 // pull.
 var remoteName string
-
-type noRemoteError struct{}
-
-func (e noRemoteError) Error() string {
-	return "no remote specified in the config"
-}
 
 type unknownRemoteError struct {
 	name string
@@ -46,7 +41,7 @@ func resolveRemote(name string) (string, error) {
 	if !explicit {
 		name = viper.GetString("remote")
 		if name == "" {
-			return "", noRemoteError{}
+			return "", index.NoRemoteError{}
 		}
 	}
 	if path, ok := configuredRemotes()[strings.ToLower(name)]; ok {
