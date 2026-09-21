@@ -43,7 +43,8 @@ is fine if you have Go, rclone, tree and graphviz installed.
 ## Architecture
 
 Package dependency flow (no cycles): `cmd` → `index` → `stage` → `artifact` →
-`fsutil`/`checksum`. `cache` sits beside `index` and is consumed by it.
+`fsutil`/`checksum`. `cache` sits beside `index` and is consumed by it;
+`registry` sits beside `index` (`cmd` → `registry` → `stage`).
 
 - **`src/artifact`** — `Artifact` is a tracked file or directory: `Path`
   (always relative to project root), `Checksum`, `IsDir`, `DisableRecursion`,
@@ -53,16 +54,24 @@ Package dependency flow (no cycles): `cmd` → `index` → `stage` → `artifact
 - **`src/stage`** — `Stage` = one YAML stage file: `Command`, `WorkingDir`,
   `Inputs`, `Outputs` (maps keyed by artifact path), and a `Checksum` of the
   stage *definition* (excluding artifact checksums) used to detect user edits.
-  `FromFile`/`ToFile` translate between the in-memory form and the YAML form
-  (paths become map keys; `SkipCache` is forced true for all inputs on load and
-  hidden on write). YAML decoding is strict.
+  `FromFile`/`FromReader`/`ToFile` translate between the in-memory form and
+  the YAML form (paths become map keys; `SkipCache` is forced true for all
+  inputs on load and hidden on write; an empty `WorkingDir` loads as `.`, so
+  compute a stage's checksum on the reloaded form). YAML decoding is strict.
+  An optional `Import *ImportSpec` (`repo`, `rev`, `rev-lock`, `path`,
+  `remote`) marks an *import stage*: no command, no inputs, exactly one
+  output whose checksum comes from a data registry. All `Import` fields are
+  part of the stage checksum.
 - **`src/index`** — `Index` is `map[stagePath]*Stage`, the whole project DAG.
   `.dud/index` on disk is just a newline-separated list of stage paths; stages
   are re-read from their YAML files on every load. Each operation
   (`Commit`, `Checkout`, `Status`, `Run`, `Fetch`, `Push`, `Graph`) is a method
   that recurses upstream via `findOwner` (which stage owns an input artifact),
   using `visited`/`inProgress` maps for memoisation and cycle detection. Edges
-  are implicit: a stage's input that is another stage's output.
+  are implicit: a stage's input that is another stage's output. Import stages
+  are read-only: `Commit` and `Push` skip them (logging "skipping import
+  stage"), `Fetch` uses `stg.Import.Remote` instead of the project remote and
+  only raises `NoRemoteError` when a regular stage is reached with no remote.
 - **`src/cache`** — `Cache` interface + `LocalCache` (content-addressed
   directory: `<checksum[:2]>/<checksum[2:]>`, files stored read-only `0444`).
   Directory artifacts are committed as a JSON *directory manifest* stored in
@@ -78,6 +87,15 @@ Package dependency flow (no cycles): `cmd` → `index` → `stage` → `artifact
   positional arg that matches a configured name (`remoteFromArgs`; it needs
   the pre-`prepare()` args because `prepare()` rewrites paths in place).
   `strategy.CheckoutStrategy` selects symlink (default) vs copy on checkout.
+- **`src/registry`** — data registries (Dud projects under git). `Registry`
+  is a scratch git repo (`New`/`Close`); `Resolve(repo, rev, path)` does a
+  shallow `git fetch` of the rev, reads `.dud/index`, the stage files and
+  `.dud/config.yaml` via `git show`, and returns the owning stage's output,
+  the commit SHA and the registry's rclone remote (`remotes[remote]` or the
+  literal `remote`, mirroring `cmd.resolveRemote`). A registry stage that is
+  itself an import re-exports its upstream remote. `runGit` is a package
+  variable for tests; local repo paths are made absolute before the fetch
+  because git runs inside the scratch dir.
 - **`src/checksum`** — BLAKE3 hashing with pooled buffers/hashers; this is the
   hot path for large datasets, so keep allocations out of it.
 - **`src/cmd`** — Cobra commands. `prepare()` in `root.go` is the common
@@ -86,7 +104,13 @@ Package dependency flow (no cycles): `cmd` → `index` → `stage` → `artifact
   must release it via `fatal()`/`unlockProject()`), merge user
   (`$XDG_CONFIG_HOME/dud/config.yaml`) and project (`.dud/config.yaml`) config
   via viper, open the cache, load the index. All logging goes through the
-  package-level `agglog.AggLogger` (`Error`/`Info`/`Debug`).
+  package-level `agglog.AggLogger` (`Error`/`Info`/`Debug`). `import.go` and
+  `update.go` implement `dud import <repo> <path>` / `dud update [stage]...`:
+  they resolve via `registry`, write the stage file (root-relative `repo` for
+  local registries), then call `idx.Fetch`/`idx.Checkout` directly through
+  `fetchAndCheckout` rather than the fetch/checkout commands (which would
+  re-run `prepare()`). `update` removes the previous workspace copy only when
+  it matches the imported version (`removeIfUnmodified`).
 
 Project layout on disk: `.dud/index`, `.dud/lock`, `.dud/config.yaml`,
 `.dud/rclone.conf` (project-local rclone config, optional if `rclone_config`
@@ -104,8 +128,17 @@ key).
   commands; subdirectories under a test share one project and run in
   lexicographic order (`00_commit`, `01_checkout`, …). `expected_fs.txt` is a
   `tree` listing of the resulting project and `expected_output.txt` the stdout;
-  both are diffed when present. Tests run under `/tmp/dud_integration_tests`
-  with a fixed umask so listings are reproducible.
+  both are diffed when present (`--pin` only rewrites files that already
+  exist, so `touch` them first). Tests run under `/tmp/dud_integration_tests`
+  with a fixed umask so listings are reproducible; the runner does not clean
+  that directory, so `rm -rf` it before re-running. Pinned listings come from
+  the Docker image's `tree` (root line is a bare `.`), and the image's git is
+  2.25 (no `init -b`, no `init.defaultBranch`), so keep tests branch-name
+  agnostic. `data_registry` needs `git` and builds a registry, a fake remote
+  and a producer project as siblings of the test's `repo` dir. Don't pin
+  stdout of steps that call rclone (progress output varies), and name stages
+  explicitly for `run`/`commit` when pinning output (no-arg forms iterate the
+  index map in random order).
 - Progress bars are suppressed when stderr is not a TTY, which is why
   integration tests can diff output.
 

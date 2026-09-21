@@ -18,9 +18,12 @@ stages) for retrieving your data in small YAML files. These stages can be
 stored in source control to **link your data to your code**. On top of that,
 stages can **run the commands to generate the data**, sort of like
 [Make](https://www.gnu.org/software/make/). Stages can be chained together to
-**create data pipelines**. See the [Getting
+**create data pipelines**, and a Dud project under git can serve as a **data
+registry** that other projects import pinned artifacts from. See the [Getting
 Started](https://kevin-hanselman.github.io/dud/getting_started) guide for
-a hands-on overview.
+a hands-on overview, and [Data
+Registries](https://kevin-hanselman.github.io/dud/data_registries) for
+sharing artifacts between projects.
 
 Dud is pronounced "duhd", not "dood". Dud is not an acronym.
 
