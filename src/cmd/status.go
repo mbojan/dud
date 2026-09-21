@@ -82,9 +82,17 @@ given stage(s).`,
 				return
 			}
 
+			// Print in a fixed order; upstream stages pulled in by recursion
+			// would otherwise come out in map order.
+			statusPaths := make([]string, 0, len(indexStatus))
+			for path := range indexStatus {
+				statusPaths = append(statusPaths, path)
+			}
+			sort.Strings(statusPaths)
+
 			writer := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			for path, stageStatus := range indexStatus {
-				if err := writeStageStatus(writer, path, stageStatus); err != nil {
+			for _, path := range statusPaths {
+				if err := writeStageStatus(writer, path, indexStatus[path]); err != nil {
 					fatal(err)
 				}
 				fmt.Fprintln(writer)
